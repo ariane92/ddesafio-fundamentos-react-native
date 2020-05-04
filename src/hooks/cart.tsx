@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 
 import AsyncStorage from '@react-native-community/async-storage';
+import { Product } from 'src/pages/Cart/styles';
 
 interface Product {
   id: string;
@@ -30,22 +31,67 @@ const CartProvider: React.FC = ({ children }) => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
+      const response = await AsyncStorage.getItem('@GoMarketplace:cart');
+      if (response) {
+        setProducts(JSON.parse(response));
+      }
     }
 
     loadProducts();
   }, []);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  const addToCart = useCallback(
+    async product => {
+      const productIndex = products.findIndex(
+        oldProduct => oldProduct.id === product.id,
+      );
 
-  const increment = useCallback(async id => {
-    // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+      if (productIndex) {
+        const newsProducts = products;
+        newsProducts[productIndex].quantity =
+          products[productIndex].quantity + 1;
+
+        setProducts(newsProducts);
+
+        await AsyncStorage.setItem(
+          '@GoMarketplace:cart',
+          JSON.stringify(newsProducts),
+        );
+      }
+
+      const newProduct = product;
+      newProduct.quantity = 1;
+
+      setProducts([...products, newProduct]);
+
+      await AsyncStorage.setItem(
+        '@GoMarketplace:cart',
+        JSON.stringify([...products, newProduct]),
+      );
+    },
+    [products, setProducts],
+  );
+
+  const increment = useCallback(
+    async id => {
+      const newProduct = products.map(product =>
+        product.id === id
+          ? { ...product, quantity: product.quantity + 1 }
+          : product,
+      );
+
+      setProducts(newProduct);
+
+      await AsyncStorage.setItem(
+        '@GoMarketplace:cart',
+        JSON.stringify(newProduct),
+      );
+    },
+    [products, setProducts],
+  );
 
   const decrement = useCallback(async id => {
-    // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
+    // teste
   }, []);
 
   const value = React.useMemo(
